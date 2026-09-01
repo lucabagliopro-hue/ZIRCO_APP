@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZIRCO | Noyau Central</title>
+    <link rel="manifest" href="/manifest.json">
+    <style>
+        body {
+            background-color: #0b0f19;
+            color: #e2e8f0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+        header {
+            padding: 15px 25px;
+            background: #111827;
+            border-bottom: 1px solid #1f2937;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #main-viewport {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            padding: 20px;
+        }
+        #core-reactor {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #0284c7 0%, #0f172a 70%);
+            border: 3px solid #38bdf8;
+            box-shadow: 0 0 30px #0284c7, inset 0 0 20px #38bdf8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 30px;
+            transition: transform 0.2s ease;
+        }
+        #core-reactor.parle {
+            animation: pulse-reactor 0.8s infinite alternate;
+        }
+        @keyframes pulse-reactor {
+            0% { transform: scale(1); box-shadow: 0 0 20px #0284c7, inset 0 0 15px #38bdf8; }
+            100% { transform: scale(1.15); box-shadow: 0 0 50px #38bdf8, inset 0 0 30px #bae6fd; }
+        }
+        .core-inner {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 2px dashed #7dd3fc;
+            animation: spin 10s linear infinite;
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        #chat-history {
+            width: 100%;
+            max-width: 600px;
+            height: 120px;
+            overflow-y: auto;
+            background: rgba(17, 24, 39, 0.7);
+            border: 1px solid #1f2937;
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+        }
+        .message { margin-bottom: 8px; line-height: 1.4; }
+        .user { color: #60a5fa; }
+        .assistant { color: #34d399; }
+
+        #input-container {
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            gap: 10px;
+        }
+        input[type="text"] {
+            flex: 1;
+            padding: 12px;
+            background: #1f2937;
+            border: 1px solid #374151;
+            color: #fff;
+            border-radius: 6px;
+            outline: none;
+        }
+        button {
+            padding: 0 20px;
+            background: #0284c7;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        button:hover { background: #0369a1; }
+        #mic-btn { background: #374151; font-size: 1.2rem; }
+        #mic-btn.ecoute { background: #dc2626; animation: pulse 1.5s infinite; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <img src="{{ url_for('static', filename='logo_zirco.png') }}" alt="Logo ZIRCO" style="width: 28px; height: 28px; object-fit: contain;">
+            <div><strong>ZIRCO</strong> | Noyau Central Omega</div>
+        </div>
+        <div style="font-size: 0.85rem; color: #10b981;">● Liaison Active</div>
+    </header>
+
+    <div id="main-viewport">
+        <div id="core-reactor">
+            <div class="core-inner"></div>
+        </div>
+
+        <div id="chat-history">
+            <div class="message assistant">Systèmes synchronisés, Monsieur. En attente de directive.</div>
+        </div>
+
+        <div id="input-container">
+            <button id="mic-btn" onclick="alternerEcouteContinu()" title="Activer l'écoute continue">🎙️</button>
+            <input type="text" id="user-input" placeholder="Entrer une directive ou parler..." autofocus>
+            <button id="send-btn" onclick="envoyerAZirco()">EXÉCUTER</button>
+        </div>
+    </div>
+
+    <audio id="audio-player" style="display:none;"></audio>
+
+    <script>
+        const chatHistory = document.getElementById('chat-history');
+        const userInput = document.getElementById('user-input');
+        const micBtn = document.getElementById('mic-btn');
+        const audioPlayer = document.getElementById('audio-player');
+        const coreReactor = document.getElementById('core-reactor');
+
+        function ajouterMessage(role, texte) {
+            const div = document.createElement('div');
+            div.className = `message ${role}`;
+            div.textContent = (role === 'user' ? "Vous: " : "ZIRCO: ") + texte;
+            chatHistory.appendChild(div);
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+        }
+
+        let reconnaissance = null;
+        let ecouteActive = false;
+
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            reconnaissance = new SpeechRecognition();
+            reconnaissance.lang = 'fr-FR';
+            reconnaissance.continuous = true;
+            reconnaissance.interimResults = false;
+
+            reconnaissance.onresult = (event) => {
+                const dernierIndex = event.results.length - 1;
+                const texteReconnu = event.results[dernierIndex][0].transcript.trim();
+                userInput.value = texteReconnu;
+                envoyerAZirco();
+            };
+
+            reconnaissance.onend = () => {
+                if (ecouteActive) {
+                    try { reconnaissance.start(); } catch(e) {}
+                }
+            };
+        }
+
+        function alternerEcouteContinu() {
+            if (!reconnaissance) {
+                alert("Reconnaissance vocale non supportée.");
+                return;
+            }
+            if (ecouteActive) {
+                ecouteActive = false;
+                reconnaissance.stop();
+                micBtn.classList.remove('ecoute');
+            } else {
+                ecouteActive = true;
+                reconnaissance.start();
+                micBtn.classList.add('ecoute');
+            }
+        }
+
+        async function envoyerAZirco() {
+            const texte = userInput.value.trim();
+            if (!texte) return;
+
+            ajouterMessage('user', texte);
+            userInput.value = '';
+
+            try {
+                const res = await fetch('/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: texte })
+                });
+                const data = await res.json();
+                ajouterMessage('assistant', data.response);
+                
+                if (data.audio_url) {
+                    audioPlayer.src = data.audio_url;
+                    coreReactor.classList.add('parle');
+                    audioPlayer.play().catch(e => console.log("Audio bloqué:", e));
+                    
+                    audioPlayer.onended = () => {
+                        coreReactor.classList.remove('parle');
+                    };
+                }
+            } catch (err) {
+                ajouterMessage('assistant', "Erreur de liaison avec le noyau, Monsieur.");
+            }
+        }
+
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') envoyerAZirco();
+        });
+    </script>
+</body>
+</html>

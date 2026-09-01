@@ -1,0 +1,15 @@
+{
+  "name": "ZIRCO - Interface Système",
+  "short_name": "ZIRCO",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b0d12",
+  "theme_color": "#d4af37",
+  "icons": [
+    {
+      "src": "/static/logo_zirco.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

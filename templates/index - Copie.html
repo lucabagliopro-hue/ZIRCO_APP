@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZIRCO - Interface Système</title>
+    <style>
+        :root {
+            --bg-color: #0b0d12;
+            --panel-bg: rgba(18, 22, 31, 0.9);
+            --accent-gold: #d4af37;
+            --accent-lead: #8a9ba8;
+            --accent-glow: rgba(212, 175, 55, 0.35);
+            --text-main: #e2e8f0;
+            --text-dim: #94a3b8;
+            --border-color: rgba(212, 175, 55, 0.25);
+            --status-green: #10b981;
+            --status-red: #ef4444;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; overflow: hidden;
+        }
+
+        .container {
+            width: 92%; max-width: 700px; height: 90vh;
+            background: var(--panel-bg); border: 1px solid var(--border-color);
+            border-radius: 12px; backdrop-filter: blur(10px);
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.8), 0 0 15px var(--accent-glow);
+            display: flex; flex-direction: column; padding: 20px;
+        }
+
+        .header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding-bottom: 14px; border-bottom: 1px solid var(--border-color);
+        }
+        
+        .brand { display: flex; align-items: center; gap: 14px; }
+
+        .alchemic-symbol {
+            width: 52px; height: 52px;
+            border: 2px solid var(--accent-gold);
+            border-radius: 8px;
+            display: flex; justify-content: center; align-items: center;
+            background: rgba(212, 175, 55, 0.05);
+            box-shadow: 0 0 10px var(--accent-glow);
+        }
+
+        .alchemic-symbol svg { width: 36px; height: 36px; }
+
+        .system-title h1 { font-size: 20px; letter-spacing: 2px; color: var(--text-main); }
+        .system-title p { font-size: 11px; color: var(--text-dim); }
+
+        .system-status { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-dim); }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background-color: var(--status-green); box-shadow: 0 0 8px var(--status-green); transition: background-color 0.3s; }
+        .status-dot.listening { background-color: var(--accent-gold); box-shadow: 0 0 10px var(--accent-gold); }
+
+        .visualizer-container {
+            height: 90px; width: 100%; margin: 14px 0;
+            background: rgba(0, 0, 0, 0.4); border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.05); overflow: hidden;
+        }
+        canvas { width: 100%; height: 100%; display: block; }
+
+        .chat-box {
+            flex: 1; overflow-y: auto; padding: 12px;
+            display: flex; flex-direction: column; gap: 10px;
+            background: rgba(0, 0, 0, 0.25); border-radius: 8px; margin-bottom: 14px;
+        }
+        .message { max-width: 85%; padding: 10px 14px; border-radius: 8px; font-size: 14px; line-height: 1.4; }
+        .message.user { align-self: flex-end; background: rgba(212, 175, 55, 0.18); border: 1px solid rgba(212, 175, 55, 0.35); }
+        .message.zirco { align-self: flex-start; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); }
+
+        .input-area { display: flex; gap: 10px; align-items: center; }
+        textarea {
+            flex: 1; height: 50px; background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--border-color); border-radius: 8px;
+            padding: 10px 12px; color: var(--text-main); font-size: 14px;
+            resize: none; outline: none;
+        }
+        textarea:focus { border-color: var(--accent-gold); }
+
+        .mic-btn {
+            background: rgba(212, 175, 55, 0.1); border: 1px solid var(--border-color);
+            color: var(--accent-gold); width: 50px; height: 50px; border-radius: 8px;
+            display: flex; justify-content: center; align-items: center; font-size: 20px;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .mic-btn:hover { background: rgba(212, 175, 55, 0.2); }
+        .mic-btn.active { background: var(--accent-gold); color: #000; box-shadow: 0 0 12px var(--accent-gold); }
+
+        button.send-btn {
+            height: 50px; padding: 0 18px; background: var(--accent-gold); color: #000;
+            font-weight: bold; border: none; border-radius: 8px; cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        button.send-btn:hover { opacity: 0.9; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <div class="brand">
+            <div class="alchemic-symbol">
+                <svg viewBox="0 0 100 100">
+                    <circle cx="50" cy="42" r="22" stroke="#d4af37" stroke-width="5" fill="none" />
+                    <circle cx="50" cy="42" r="4" fill="#d4af37" />
+                    <path d="M 50,64 L 50,90 M 40,78 L 60,78 M 50,90 Q 30,90 30,72" stroke="#8a9ba8" stroke-width="5" fill="none" stroke-linecap="round" />
+                </svg>
+            </div>
+            <div class="system-title">
+                <h1>ZIRCO</h1>
+                <p>Pb &#8594; Au | Transmutation & Control</p>
+            </div>
+        </div>
+        <div class="system-status">
+            <div class="status-dot" id="statusDot"></div>
+            <span id="statusLabel">Système Prêt</span>
+        </div>
+    </div>
+
+    <div class="visualizer-container"><canvas id="waveCanvas"></canvas></div>
+
+    <div class="chat-box" id="chatBox">
+        <div class="message zirco">Systèmes opérationnels, Monsieur. Transmutation activée. Saisissez votre texte ou activez le micro.</div>
+    </div>
+
+    <div class="input-area">
+        <textarea id="userInput" placeholder="Écrivez ou dictez votre message..." onkeydown="handleKeyDown(event)"></textarea>
+        <!-- Bouton Micro intégré -->
+        <button class="mic-btn" id="micBtn" onclick="toggleMicrophone()" title="Activer le micro">🎤</button>
+        <button class="send-btn" onclick="sendManualMessage()">ENVOYER</button>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('waveCanvas');
+    const ctx = canvas.getContext('2d');
+    let isSpeaking = false;
+    let step = 0;
+
+    function resizeCanvas() { canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight; }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    function drawWave() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const width = canvas.width, height = canvas.height, centerY = height / 2;
+        ctx.beginPath(); ctx.lineWidth = 2;
+        ctx.strokeStyle = isSpeaking ? '#d4af37' : '#10b981';
+
+        const amplitude = isSpeaking ? 28 : 5;
+        const frequency = isSpeaking ? 0.04 : 0.02;
+        const speed = isSpeaking ? 0.15 : 0.04;
+
+        for (let x = 0; x < width; x++) {
+            const envelope = Math.sin((x / width) * Math.PI);
+            const y = centerY + Math.sin(x * frequency + step) * amplitude * envelope;
+            if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.stroke(); step += speed; requestAnimationFrame(drawWave);
+    }
+    drawWave();
+
+    // --- RECONNAISSANCE VOCALE MANUELLE / STABLE ---
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let rec = null;
+    let isListening = false;
+
+    if (SpeechRecognition) {
+        rec = new SpeechRecognition();
+        rec.lang = 'fr-FR';
+        rec.continuous = false;
+        rec.interimResults = false;
+
+        rec.onstart = () => {
+            isListening = true;
+            document.getElementById('micBtn').classList.add('active');
+            document.getElementById('statusDot').classList.add('listening');
+            document.getElementById('statusLabel').textContent = "Écoute en cours...";
+        };
+
+        rec.onresult = (e) => {
+            const transcript = e.results[0][0].transcript;
+            if (transcript.trim()) {
+                document.getElementById('userInput').value = transcript;
+                sendManualMessage();
+            }
+        };
+
+        rec.onerror = () => {
+            stopListening();
+        };
+
+        rec.onend = () => {
+            stopListening();
+        };
+    }
+
+    function toggleMicrophone() {
+        if (!rec) {
+            alert("La reconnaissance vocale n'est pas supportée par votre navigateur.");
+            return;
+        }
+        if (isListening) {
+            rec.stop();
+        } else {
+            try {
+                rec.start();
+            } catch(e) {
+                stopListening();
+            }
+        }
+    }
+
+    function stopListening() {
+        isListening = false;
+        const micBtn = document.getElementById('micBtn');
+        const statusDot = document.getElementById('statusDot');
+        const statusLabel = document.getElementById('statusLabel');
+        if (micBtn) micBtn.classList.remove('active');
+        if (statusDot) statusDot.classList.remove('listening');
+        if (statusLabel) statusLabel.textContent = "Système Prêt";
+    }
+
+    // --- GESTION DES MESSAGES ---
+    function sendManualMessage() {
+        const input = document.getElementById('userInput');
+        const text = input.value.trim();
+        if (!text) return;
+        input.value = '';
+        processMessage(text);
+    }
+
+    async function processMessage(text) {
+        appendMessage('user', text);
+
+        try {
+            const response = await fetch('/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: text })
+            });
+
+            const data = await response.json();
+            if (data.response) {
+                appendMessage('zirco', data.response);
+                if (data.audio) playAudio(data.audio);
+            }
+        } catch (e) {
+            appendMessage('zirco', "⚠️ Erreur réseau, Monsieur.");
+        }
+    }
+
+    function appendMessage(sender, text) {
+        const chatBox = document.getElementById('chatBox');
+        const msgDiv = document.createElement('div');
+        msgDiv.className = `message ${sender}`;
+        msgDiv.textContent = text;
+        chatBox.appendChild(msgDiv);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function playAudio(base64Audio) {
+        isSpeaking = true;
+        const audio = new Audio("data:audio/mp3;base64," + base64Audio);
+        audio.play();
+        audio.onended = () => {
+            isSpeaking = false;
+        };
+    }
+
+    function handleKeyDown(event) {
+        if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault();
+            sendManualMessage();
+        }
+    }
+</script>
+
+</body>
+</html>

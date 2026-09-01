@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ZIRCO - Module Révision MMC105</title>
+  <style>
+    :root {
+      --bg-primary: #0f172a;
+      --bg-card: #1e293b;
+      --bg-card-hover: #334155;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent-blue: #00d2ff;
+      --accent-green: #22c55e;
+      --accent-red: #ef4444;
+      --border-color: #334155;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background-color: var(--bg-card);
+      border-bottom: 1px solid var(--border-color);
+      padding: 1.25rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .brand {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--accent-blue);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    nav {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .nav-btn {
+      background: transparent;
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 0.6rem 1.2rem;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+
+    .nav-btn:hover, .nav-btn.active {
+      background-color: var(--accent-blue);
+      color: #000;
+      border-color: var(--accent-blue);
+    }
+
+    main {
+      flex: 1;
+      max-width: 1100px;
+      width: 100%;
+      margin: 2rem auto;
+      padding: 0 1.5rem;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 0.75rem;
+      padding: 2rem;
+      margin-bottom: 1.5rem;
+    }
+
+    h2 {
+      margin-bottom: 1.25rem;
+      color: var(--accent-blue);
+    }
+
+    .grid-courses {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .course-card h3 {
+      margin-bottom: 0.75rem;
+      color: var(--text-main);
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 0.5rem;
+    }
+
+    .course-card ul {
+      list-style-type: none;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    .course-card li {
+      margin-bottom: 0.75rem;
+      padding-left: 1.25rem;
+      position: relative;
+      line-height: 1.4;
+    }
+
+    .course-card li::before {
+      content: "■";
+      color: var(--accent-blue);
+      position: absolute;
+      left: 0;
+      font-size: 0.8rem;
+      top: 2px;
+    }
+
+    .quiz-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .question-text {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+    }
+
+    .options-container {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .option-btn {
+      background-color: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 1rem;
+      border-radius: 0.5rem;
+      text-align: left;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: background-color 0.2s ease;
+    }
+
+    .option-btn:hover:not(:disabled) {
+      background-color: var(--bg-card-hover);
+    }
+
+    .option-btn.correct {
+      background-color: rgba(34, 197, 94, 0.2);
+      border-color: var(--accent-green);
+      color: var(--accent-green);
+    }
+
+    .option-btn.incorrect {
+      background-color: rgba(239, 68, 68, 0.2);
+      border-color: var(--accent-red);
+      color: var(--accent-red);
+    }
+
+    .explanation-box {
+      margin-top: 1.5rem;
+      padding: 1rem;
+      background-color: var(--bg-primary);
+      border-left: 4px solid var(--accent-blue);
+      border-radius: 0.25rem;
+      display: none;
+    }
+
+    .action-btn {
+      margin-top: 1.5rem;
+      background-color: var(--accent-blue);
+      color: #000;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 0.5rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: none;
+    }
+
+    .score-summary {
+      text-align: center;
+      padding: 2rem;
+    }
+
+    .score-value {
+      font-size: 3rem;
+      font-weight: 800;
+      color: var(--accent-blue);
+      margin: 1rem 0;
+    }
+
+    .flashcard-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1rem;
+    }
+
+    .flashcard {
+      background-color: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 0.5rem;
+      padding: 1.5rem;
+      text-align: left;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.25rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+      color: #000;
+    }
+
+    .badge-meca { background-color: #38bdf8; }
+    .badge-materiaux { background-color: #22c55e; }
+    .badge-thermo { background-color: #f59e0b; }
+    
+    code {
+      background: #0f172a;
+      padding: 2px 4px;
+      border-radius: 4px;
+      color: #38bdf8;
+      font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      ⚡ ZIRCO <span>| MMC105 Métallurgie Physique</span>
+    </div>
+    <nav>
+      <button class="nav-btn active" onclick="switchTab('cours', event)">Fiches Techniques</button>
+      <button class="nav-btn" onclick="switchTab('quiz', event)">Évaluation Active</button>
+      <button class="nav-btn" onclick="switchTab('revision', event)">Mémoire Active (Lois)</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- ONGLET COURS -->
+    <section id="cours" class="tab-content active">
+      <div class="card">
+        <h2>Fiches de Synthèse MMC105</h2>
+        
+        <div class="grid-courses">
+          <div class="card course-card">
+            <h3>1. Cristallographie & Structures</h3>
+            <ul>
+              <li><strong>Cubique à faces centrées (cfc) :</strong> 4 atomes par maille, plan compact {111}, direction compacte <110>[cite: 1]. Matériaux ductiles avec un nombre de coordination de 12[cite: 1, 6].</li>
+              <li><strong>Cubique centrée (cc) :</strong> 2 atomes par maille, pas de plan compact, direction compacte <111>[cite: 1].</li>
+              <li><strong>Hexagonale compacte (hc) :</strong> 6 atomes par maille complète, rapport c/a idéal de 1,633[cite: 1].</li>
+              <li><strong>Défauts :</strong> Les dislocations vis (décalage angulaire) et coin (demi-plan supplémentaire) permettent la déformation plastique[cite: 1].</li>
+            </ul>
+          </div>
+
+          <div class="card course-card">
+            <h3>2. Fatigue des Matériaux</h3>
+            <ul>
+              <li><strong>Oligocyclique :</strong> Pilotée par la déformation plastique[cite: 2, 6]. Modélisée par la loi de Coffin-Manson : <code>&Delta;&epsilon;^pl * N_f^b = C_2</code>[cite: 2, 3].</li>
+              <li><strong>Grand nombre de cycles :</strong> Pilotée par la contrainte, modélisée par la loi de Basquin : <code>&Delta;&sigma; * N_f^a = C_1</code>[cite: 2, 3].</li>
+              <li><strong>Propagation (Loi de Paris) :</strong> Relie la vitesse de fissuration <code>da/dN</code> à l'amplitude du facteur d'intensité de contrainte <code>&Delta;K</code>[cite: 2, 6].</li>
+              <li><strong>Règle de Miner :</strong> Cumul d'endommagement, rupture lorsque <code>&Sigma;(N_i / N_ri) = 1</code>[cite: 2, 3].</li>
+            </ul>
+          </div>
+
+          <div class="card course-card">
+            <h3>3. Aciers et Inoxydables</h3>
+            <ul>
+              <li><strong>Acier Hypoeutectoïde :</strong> Contient moins de 0,8% de carbone[cite: 4]. Microstructure composée de ferrite et de perlite[cite: 4].</li>
+              <li><strong>Acier Hypereutectoïde :</strong> Contient plus de 0,8% de carbone[cite: 4]. La transformation débute par l'apparition de cémentite pro-eutectoïde aux joints de grains[cite: 4].</li>
+              <li><strong>Éléments d'alliage (Inox) :</strong> Le Chrome est alphagène (stabilise la ferrite, résistance corrosion)[cite: 4]. Le Nickel, le Carbone et l'Azote sont gammagènes (stabilisent l'austénite)[cite: 4, 6].</li>
+              <li><strong>Corrosion intergranulaire :</strong> Déchromisation des joints de grains due à la précipitation de carbures de chrome (Cr23C6)[cite: 4]. Parades : Acier bas carbone (304L) ou nuances stabilisées au Ti/Nb (321/347)[cite: 4].</li>
+            </ul>
+          </div>
+
+          <div class="card course-card">
+            <h3>4. Alliages Non Ferreux</h3>
+            <ul>
+              <li><strong>Aluminium - Série 1000 :</strong> Aluminium non allié (>99%), mou, très ductile[cite: 5]. Durcissement uniquement par écrouissage[cite: 5, 6].</li>
+              <li><strong>Aluminium - Séries 2000 (Cu) et 7000 (Zn) :</strong> Destinés à l'aéronautique grâce au durcissement structural[cite: 5].</li>
+              <li><strong>Durcissement structural :</strong> Étapes = Mise en solution, trempe (création d'une solution solide sursaturée métastable), puis vieillissement/revenu pour précipiter des nano-particules bloquant les dislocations[cite: 5].</li>
+              <li><strong>Base Nickel :</strong> Les Inconels (Ni-Cr) résistent à l'oxydation[cite: 5]. L'ajout massif de Molybdène (ex: Hastelloy) améliore la tenue en milieux acides extrêmes[cite: 5].</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ONGLET QUIZ -->
+    <section id="quiz" class="tab-content">
+      <div class="card">
+        <div id="quiz-body">
+          <div class="quiz-header">
+            <span id="question-tracker">Question 1/5</span>
+            <span id="score-tracker">Score : 0</span>
+          </div>
+          <div class="question-text" id="question-text">Analyse en cours...</div>
+          <div class="options-container" id="options-container"></div>
+          <div class="explanation-box" id="explanation-box"></div>
+          <button class="action-btn" id="next-btn" onclick="nextQuestion()">Validation</button>
+        </div>
+
+        <div id="quiz-result" class="score-summary" style="display: none;">
+          <h2>Bilan d'Évaluation</h2>
+          <div class="score-value" id="final-score">0/5</div>
+          <p id="feedback-text" style="color: var(--text-muted); margin-bottom: 1.5rem;"></p>
+          <button class="nav-btn active" onclick="restartQuiz()">Initialiser un nouveau test</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ONGLET REVISION (LOIS) -->
+    <section id="revision" class="tab-content">
+      <div class="card">
+        <h2>Lois & Équations Fondamentales</h2>
+        <div class="flashcard-grid">
+          <div class="flashcard">
+            <span class="badge badge-meca">Loi de Paris</span>
+            <h3><code>da/dN = A &middot; (&Delta;K)^m</code></h3>
+            <p style="margin-top: 0.5rem; color: var(--text-muted); font-size: 0.9rem;">Relie la vitesse de fissuration à la variation du facteur d'intensité de contrainte[cite: 2, 3].</p>
+          </div>
+          
+          <div class="flashcard">
+            <span class="badge badge-materiaux">Loi de Hall-Petch</span>
+            <h3><code>R_e = R_0 + k_y / &radic;d</code></h3>
+            <p style="margin-top: 0.5rem; color: var(--text-muted); font-size: 0.9rem;">La limite d'élasticité augmente lorsque la taille moyenne des grains (d) diminue[cite: 3].</p>
+          </div>
+
+          <div class="flashcard">
+            <span class="badge badge-materiaux">Loi de Schmid</span>
+            <h3><code>R_e = &tau;_RC / (cos &phi; &middot; cos &lambda;)_max</code></h3>
+            <p style="margin-top: 0.5rem; color: var(--text-muted); font-size: 0.9rem;">Relie la limite d'élasticité macroscopique à la cission critique résolue dans le plan de glissement[cite: 2, 3].</p>
+          </div>
+
+          <div class="flashcard">
+            <span class="badge badge-thermo">Seconde Loi de Fick</span>
+            <h3><code>&part;C/&part;t = D &middot; (&part;²C/&part;x²)</code></h3>
+            <p style="margin-top: 0.5rem; color: var(--text-muted); font-size: 0.9rem;">Vitesse de variation de concentration en un point au cours du temps (diffusion)[cite: 1, 3].</p>
+          </div>
+          
+          <div class="flashcard">
+            <span class="badge badge-meca">Ténacité (Rupture brutale)</span>
+            <h3><code>K_c = &radic;(E &middot; G_c)</code></h3>
+            <p style="margin-top: 0.5rem; color: var(--text-muted); font-size: 0.9rem;">La rupture intervient quand le facteur d'intensité de contrainte atteint la ténacité du matériau[cite: 2, 3].</p>
+          </div>
+
+          <div class="flashcard">
+            <span class="badge badge-thermo">Loi de Larson-Miller</span>
+            <h3><code>&epsilon;'_s = A &middot; &sigma;^n &middot; exp(-Q/RT)</code></h3>
+            <p style="margin-top: 0.5rem; color: var(--text-muted); font-size: 0.9rem;">Vitesse de déformation en fluage secondaire stationnaire (thermo-activé)[cite: 2, 3].</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const questions = [
+      {
+        question: "La structure Cubique à Faces Centrées (CFC) correspond aux métaux :",
+        options: ["Fragiles", "Ductiles", "Rigides", "À basse température de fusion"],
+        answer: 1,
+        explanation: "Les métaux à structure CFC (comme l'aluminium, le cuivre, le nickel, le fer gamma) sont particulièrement ductiles grâce à leur forte compacité (74%) et leurs 12 systèmes de glissement[cite: 1, 6]."
+      },
+      {
+        question: "Dans la loi de Paris, que relie exactement l'équation da/dN = A(ΔK)^m ?",
+        options: [
+          "Le nombre de cycles à la rupture à l'amplitude de contrainte",
+          "La propagation à la variation du facteur d'intensité de contrainte",
+          "Le nombre de cycles à la déformation",
+          "Le cumul d'endommagements à la rupture"
+        ],
+        answer: 1,
+        explanation: "La loi de Paris modélise la propagation stable d'une fissure en fatigue, reliant la vitesse de croissance (da/dN) à l'étendue du facteur d'intensité de contrainte (ΔK)[cite: 2, 6]."
+      },
+      {
+        question: "Dans les aciers inoxydables, quels sont les principaux éléments gammagènes (stabilisant l'austénite) ?",
+        options: ["Cr, Mo, Ti, Si", "Ni, C, N, Mn", "Al, W, V, Nb", "Fe, P, S, B"],
+        answer: 1,
+        explanation: "Le Nickel (Ni) est le chef de file des éléments gammagènes. Le Carbone (C), l'Azote (N) et le Manganèse (Mn) ont également un très fort pouvoir de stabilisation de l'austénite[cite: 4, 6]."
+      },
+      {
+        question: "Quel est le seul moyen de durcir l'aluminium pur (série 1000) ?",
+        options: ["La trempe martensitique", "Le revenu de précipitation", "L'écrouissage", "Le traitement de mise en solution"],
+        answer: 2,
+        explanation: "L'aluminium de la série 1000 ne contient pas d'éléments d'alliage pour permettre un durcissement structural. Il ne peut être durci que par écrouissage (laminage à froid augmentant la densité de dislocations)[cite: 5, 6]."
+      },
+      {
+        question: "Quel facteur pilote principalement la tendance à former une solution solide de substitution ?",
+        options: ["Le gradient de concentration", "L'électronégativité", "La densité de lacunes", "Les rayons atomiques"],
+        answer: 3,
+        explanation: "La formation d'une solution solide de substitution dépend de la différence de taille entre les atomes (les rayons atomiques doivent être similaires, règle de Hume-Rothery)[cite: 6]."
+      }
+    ];
+
+    let currentQuestion = 0;
+    let score = 0;
+    let answered = false;
+
+    function switchTab(tabId, evt) {
+      document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+      document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+      
+      document.getElementById(tabId).classList.add('active');
+      if (evt && evt.target) {
+        evt.target.classList.add('active');
+      }
+
+      if (tabId === 'quiz' && currentQuestion === 0 && !answered) {
+        loadQuestion();
+      }
+    }
+
+    function loadQuestion() {
+      answered = false;
+      const q = questions[currentQuestion];
+      
+      document.getElementById('question-tracker').innerText = `Question ${currentQuestion + 1}/${questions.length}`;
+      document.getElementById('score-tracker').innerText = `Score : ${score}`;
+      document.getElementById('question-text').innerText = q.question;
+      
+      const optionsContainer = document.getElementById('options-container');
+      optionsContainer.innerHTML = '';
+
+      q.options.forEach((opt, idx) => {
+        const btn = document.createElement('button');
+        btn.className = 'option-btn';
+        btn.innerText = `${String.fromCharCode(65 + idx)}. ${opt}`;
+        btn.onclick = () => selectOption(idx);
+        optionsContainer.appendChild(btn);
+      });
+
+      document.getElementById('explanation-box').style.display = 'none';
+      document.getElementById('next-btn').style.display = 'none';
+    }
+
+    function selectOption(index) {
+      if (answered) return;
+      answered = true;
+
+      const q = questions[currentQuestion];
+      const buttons = document.querySelectorAll('.option-btn');
+
+      buttons.forEach((btn, idx) => {
+        btn.disabled = true;
+        if (idx === q.answer) {
+          btn.classList.add('correct');
+        } else if (idx === index) {
+          btn.classList.add('incorrect');
+        }
+      });
+
+      if (index === q.answer) {
+        score++;
+        document.getElementById('score-tracker').innerText = `Score : ${score}`;
+      }
+
+      const explanationBox = document.getElementById('explanation-box');
+      explanationBox.innerHTML = `<strong>Analyse ZIRCO :</strong> ${q.explanation}`;
+      explanationBox.style.display = 'block';
+
+      const nextBtn = document.getElementById('next-btn');
+      if (currentQuestion < questions.length - 1) {
+        nextBtn.innerText = "Traitement suivant";
+      } else {
+        nextBtn.innerText = "Générer le rapport final";
+      }
+      nextBtn.style.display = 'inline-block';
+    }
+
+    function nextQuestion() {
+      currentQuestion++;
+      if (currentQuestion < questions.length) {
+        loadQuestion();
+      } else {
+        showResults();
+      }
+    }
+
+    function showResults() {
+      document.getElementById('quiz-body').style.display = 'none';
+      const resultDiv = document.getElementById('quiz-result');
+      resultDiv.style.display = 'block';
+
+      document.getElementById('final-score').innerText = `${score}/${questions.length}`;
+      
+      const feedback = document.getElementById('feedback-text');
+      if (score === questions.length) {
+        feedback.innerText = "Validation complète. Les données sont intégrées. Restez concentré sur l'objectif.";
+      } else if (score >= 3) {
+        feedback.innerText = "Performance acceptable. Relisez les fiches sur les alliages d'aluminium et les aciers.";
+      } else {
+        feedback.innerText = "Échec de l'évaluation. Il est impératif de restructurer vos connaissances via les fiches techniques.";
+      }
+    }
+
+    function restartQuiz() {
+      currentQuestion = 0;
+      score = 0;
+      document.getElementById('quiz-result').style.display = 'none';
+      document.getElementById('quiz-body').style.display = 'block';
+      loadQuestion();
+    }
+
+    window.onload = () => {
+      if (document.getElementById('quiz').classList.contains('active')) {
+        loadQuestion();
+      }
+    };
+  </script>
+</body>
+</html>
