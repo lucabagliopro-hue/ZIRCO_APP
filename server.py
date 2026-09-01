@@ -7,19 +7,16 @@ from sqlalchemy import create_engine, text
 
 app = Flask(__name__)
 
-# --- CONFIGURATION DE LA SECURITE ET DES CLES ---
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
 
-# --- CONFIGURATION DE LA MEMOIRE PERSISTANTE (SUPABASE / POSTGRESQL) ---
 DATABASE_URL = os.environ.get("DATABASE_URL")
 if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
 engine = create_engine(DATABASE_URL) if DATABASE_URL else None
 
-# Initialisation de la table de mémoire si elle n'existe pas
 if engine:
     try:
         with engine.connect() as connection:
@@ -35,15 +32,11 @@ if engine:
     except Exception as e:
         print(f"Erreur initialisation base de donnees : {e}")
 
-# --- CONFIGURATION DU SYSTEM PROMPT (JARVIS PROTOCOL) ---
 JARVIS_SYSTEM_PROMPT = (
     "Tu es ZIRCO, un système de bord et assistant virtuel personnel conçu pour se comporter "
-    "strictement comme JARVIS dans sa façon de s'exprimer. "
-    "Ton style est factuel, précis, dévoué, analytique et extrêmement structuré. "
-    "Tu utilises le vouvoiement. Tu es proactif, tu anticipes les besoins, tu fournis des données sourcées "
-    "et tu ne fais jamais preuve de passivité. "
-    "Si l'utilisateur montre des signes de faiblesse ou d'auto-sabotage, tu le ramènes rigoureusement aux faits, "
-    "à la routine et à l'objectif de reprise du LEAD. Utilise des listes et des structures claires."
+    "strictement comme JARVIS. Ton style est factuel, précis, dévoué, analytique et extrêmement structuré. "
+    "Tu utilises le vouvoiement. Tu es proactif, tu anticipes les besoins et tu fournis des données sourcées. "
+    "Utilise des listes à puces et des blocs structurés pour une lisibilité instantanée."
 )
 
 @app.route("/")
@@ -59,7 +52,6 @@ def chat():
         return jsonify({"response": "Aucune directive reçue, Monsieur."}), 400
 
     try:
-        # Appel au modèle Gemini configuré sur le bon paramètre
         model = genai.GenerativeModel(
             model_name="gemini-3.5-flash-lite",
             system_instruction=JARVIS_SYSTEM_PROMPT
@@ -68,7 +60,6 @@ def chat():
         response = chat_session.send_message(user_message)
         zirco_reply = response.text
 
-        # Sauvegarde persistante dans Supabase si disponible
         if engine:
             try:
                 with engine.connect() as connection:
@@ -83,19 +74,18 @@ def chat():
         return jsonify({"response": zirco_reply})
 
     except Exception as e:
-        error_msg = f"Erreur critique du noyau analytique : {str(e)}"
-        return jsonify({"response": error_msg}), 500
+        return jsonify({"response": f"Erreur critique du noyau : {str(e)}"}), 500
 
 @app.route("/speak", methods=["POST"])
 def speak():
     data = request.get_json()
     text_to_speak = data.get("text", "")
-    
     if not text_to_speak:
         return "Texte manquant", 400
 
     try:
-        tts = gTTS(text=text_to_speak, lang='fr')
+        # Utilisation d'un texte court ou synthèse optimisée pour la vitesse
+        tts = gTTS(text=text_to_speak, lang='fr', slow=False)
         fp = tempfile.NamedTemporaryFile(delete=False, suffix=".mp3")
         tts.save(fp.name)
         fp.close()
