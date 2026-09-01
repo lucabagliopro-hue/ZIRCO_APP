@@ -118,7 +118,7 @@
 
     <script>
         const chatContainer = document.getElementById("chat-container");
-        const userInput = document.getElementById("userInput");
+        const userInput = document.getElementById("user-input");
         const micBtn = document.getElementById("mic-btn");
 
         // Synthèse Vocale (gTTS via backend Flask)
@@ -191,7 +191,7 @@
                 const speechResult = event.results[0][0].transcript;
                 userInput.value = speechResult;
                 stopListening();
-                sendDirective(); // Envoi automatique après dictée
+                sendDirective();
             };
 
             recognition.onerror = function(event) {
@@ -203,7 +203,7 @@
                 stopListening();
             };
         } else {
-            micBtn.style.display = 'none'; // Masquer si non supporté par le navigateur
+            micBtn.style.display = 'none';
         }
 
         function toggleSpeechRecognition() {
