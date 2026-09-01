@@ -30,7 +30,7 @@ if engine:
                     directive TEXT,
                     response TEXT
                 );
-            3"""))
+            """))
             connection.commit()
     except Exception as e:
         print(f"Erreur initialisation base de donnees : {e}")
