@@ -59,9 +59,9 @@ def chat():
         return jsonify({"response": "Aucune directive reçue, Monsieur."}), 400
 
     try:
-        # Appel au modèle Gemini avec le protocole JARVIS
+        # Appel au modèle Gemini configuré sur le bon paramètre
         model = genai.GenerativeModel(
-            model_name="gemini-1.5-flash",
+            model_name="gemini-3.5-flash-lite",
             system_instruction=JARVIS_SYSTEM_PROMPT
         )
         chat_session = model.start_chat(history=[])
