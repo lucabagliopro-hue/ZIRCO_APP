@@ -58,7 +58,7 @@
             font-size: 0.75rem;
             color: rgba(0, 240, 255, 0.7);
             text-align: right;
-            background: rgba(1, 4, 9, 0.5);
+            background: rgba(1, 4, 9, 0.6);
             padding: 5px 10px;
             border-radius: 4px;
             border: 1px solid rgba(0, 240, 255, 0.2);
@@ -81,7 +81,7 @@
         }
 
         .panel-box {
-            background: rgba(1, 8, 18, 0.88);
+            background: rgba(1, 8, 18, 0.9);
             border: 1px solid rgba(0, 240, 255, 0.4);
             border-radius: 10px;
             backdrop-filter: blur(12px);
@@ -129,7 +129,6 @@
         }
         .zirco-message ul { margin: 5px 0 5px 20px; padding: 0; }
         .zirco-message li { margin-bottom: 4px; }
-        .zirco-message h3 { font-size: 0.95rem; color: var(--accent-cyan); margin: 5px 0; }
 
         #input-container {
             display: flex;
@@ -310,7 +309,6 @@
         const userInput = document.getElementById("user-input");
         const micBtn = document.getElementById("mic-btn");
 
-        // Utilisation de la synthèse vocale native du navigateur pour une réactivité instantanée (zéro latence)
         function speakText(text) {
             if (!('speechSynthesis' in window)) return;
             window.speechSynthesis.cancel();
@@ -327,8 +325,6 @@
                 .replace(/</g, "&lt;")
                 .replace(/>/g, "&gt;");
 
-            html = html.replace(/###\s*(.*?)(?:\n|<|$)/g, '<h3>$1</h3>');
-            html = html.replace(/>\s*(.*?)(?:\n|<|$)/g, '<blockquote style="border-left: 2px solid var(--accent-cyan); margin: 5px 0; padding-left: 8px; color: rgba(224,251,252,0.8);"><strong>Note :</strong> $1</blockquote>');
             html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
             const lines = html.split('\n');
@@ -365,7 +361,6 @@
             appendMessage(message, 'user-message', false);
             userInput.value = "";
 
-            // Enregistrement immédiat dans l'agenda à droite sans aucune question
             const now = new Date();
             const dateStr = now.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long' });
             const timeStr = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
