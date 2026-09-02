@@ -27,7 +27,6 @@
             justify-content: space-between;
         }
 
-        /* --- SPHÈRE 3D EN ARRIÈRE-PLAN --- */
         #webgl-container {
             position: fixed;
             top: 0; left: 0;
@@ -55,7 +54,6 @@
             text-shadow: 0 0 12px var(--accent-cyan);
         }
 
-        /* Météo et Heure discrètes en haut à droite derrière le 3D */
         .top-right-hud {
             font-size: 0.75rem;
             color: rgba(0, 240, 255, 0.7);
@@ -67,7 +65,6 @@
             backdrop-filter: blur(5px);
         }
 
-        /* --- LAYOUT PRINCIPAL --- */
         .main-layout {
             display: grid;
             grid-template-columns: 2fr 1fr;
@@ -129,8 +126,10 @@
             border-left: 3px solid var(--accent-cyan);
             align-self: flex-start;
             color: var(--accent-cyan);
-            white-space: pre-wrap;
         }
+        .zirco-message ul { margin: 5px 0 5px 20px; padding: 0; }
+        .zirco-message li { margin-bottom: 4px; }
+        .zirco-message h3 { font-size: 0.95rem; color: var(--accent-cyan); margin: 5px 0; }
 
         #input-container {
             display: flex;
@@ -146,9 +145,7 @@
             font-size: 0.95rem;
             outline: none;
         }
-        #user-input:focus {
-            box-shadow: var(--glow-cyan);
-        }
+        #user-input:focus { box-shadow: var(--glow-cyan); }
         button {
             background: rgba(0, 119, 255, 0.3);
             color: var(--accent-cyan);
@@ -160,11 +157,7 @@
             font-family: inherit;
             transition: 0.2s;
         }
-        button:hover {
-            background: var(--accent-cyan);
-            color: var(--bg-color);
-            box-shadow: var(--glow-cyan);
-        }
+        button:hover { background: rgba(0, 119, 255, 0.35); box-shadow: var(--glow-cyan); }
         #mic-btn {
             background: rgba(255, 0, 85, 0.2);
             border-color: #ff0055;
@@ -183,7 +176,6 @@
             100% { transform: scale(1); }
         }
 
-        /* --- AGENDA DYNAMIQUE (BAS À GAUCHE / GÉRÉ PAR VOUS) --- */
         .agenda-table {
             width: 100%;
             border-collapse: collapse;
@@ -225,7 +217,6 @@
             </div>
         </div>
 
-        <!-- AGENDA DYNAMIQUE EN BAS À GAUCHE / PANNEAU DÉDIÉ -->
         <div class="panel-box" id="agenda-panel">
             <div class="panel-title">Agenda Dynamique</div>
             <div style="overflow-y: auto; max-height: 30vh;">
@@ -237,7 +228,6 @@
                         </tr>
                     </thead>
                     <tbody id="agenda-body">
-                        <!-- Les rendez-vous s'ajouteront ici dynamiquement -->
                         <tr><td colspan="2" style="color: rgba(255,255,255,0.4); text-align: center;">Aucun événement enregistré.</td></tr>
                     </tbody>
                 </table>
@@ -246,7 +236,6 @@
     </div>
 
     <script>
-        // --- HORLOGE & TEMPS RÉEL (Mulhouse) ---
         function updateClock() {
             const now = new Date();
             const options = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
@@ -257,7 +246,6 @@
         setInterval(updateClock, 1000);
         updateClock();
 
-        // --- THREE.JS SPHERE 3D ---
         const container = document.getElementById('webgl-container');
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -308,25 +296,28 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
 
-        // --- GESTION AGENDA DYNAMIQUE ---
         function addAgendaItem(dateTime, eventText) {
             const tbody = document.getElementById('agenda-body');
-            // Supprimer le message "aucun événement" si présent
             if (tbody.rows.length === 1 && tbody.rows[0].cells.length === 1) {
                 tbody.innerHTML = "";
             }
-            const row = tbody.insertRow();
+            const row = tbody.insertRow(0); // Insère en haut
             row.insertCell(0).innerText = dateTime;
             row.insertCell(1).innerText = eventText;
         }
 
-        // --- INTERACTION & VOCAL ---
         const chatContainer = document.getElementById("chat-container");
         const userInput = document.getElementById("user-input");
         const micBtn = document.getElementById("mic-btn");
 
+        let currentAudio = null;
+
         function speakText(text) {
             const cleanText = text.replace(/[\*\_\#\`]/g, '');
+            if (currentAudio) {
+                currentAudio.pause(); // Coupe net la lecture précédente pour éviter les superpositions
+                currentAudio = null;
+            }
             fetch('/speak', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -334,22 +325,64 @@
             })
             .then(res => res.blob())
             .then(blob => {
-                const audio = new Audio(URL.createObjectURL(blob));
-                audio.play();
+                const audioUrl = URL.createObjectURL(blob);
+                currentAudio = new Audio(audioUrl);
+                currentAudio.play();
             });
+        }
+
+        function formatMarkdown(text) {
+            let html = text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;");
+
+            // Titres et blocs
+            html = html.replace(/###\s*(.*?)(?:\n|<|$)/g, '<h3>$1</h3>');
+            html = html.replace(/>\s*(.*?)(?:\n|<|$)/g, '<blockquote style="border-left: 2px solid var(--accent-cyan); margin: 5px 0; padding-left: 8px; color: rgba(224,251,252,0.8);"><strong>Note :</strong> $1</blockquote>');
+            html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
+            const lines = html.split('\n');
+            let inList = false;
+            let formattedLines = [];
+
+            for (let line of lines) {
+                let trimmed = line.trim();
+                if (trimmed.startsWith('* ') || trimmed.startsWith('- ')) {
+                    if (!inList) {
+                        inList = true;
+                        formattedLines.push('<ul>');
+                    }
+                    formattedLines.push(`<li>${trimmed.substring(2)}</li>`);
+                } else {
+                    if (inList) {
+                        inList = false;
+                        formattedLines.push('</ul>');
+                    }
+                    if (trimmed !== "") {
+                        formattedLines.push(line + '<br>');
+                    }
+                }
+            }
+            if (inList) formattedLines.push('</ul>');
+
+            return formattedLines.join('');
         }
 
         function sendDirective() {
             const message = userInput.value.trim();
             if (!message) return;
 
-            appendMessage(message, 'user-message');
+            appendMessage(message, 'user-message', false);
             userInput.value = "";
 
-            // Détection simple si l'utilisateur veut ajouter un rendez-vous à l'agenda
-            if (message.toLowerCase().includes("agenda") || message.toLowerCase().includes("note") || message.toLowerCase().includes("rendez-vous") || message.toLowerCase().includes("précise")) {
-                // Exemple d'extraction automatique ou de prise en compte
-                addAgendaItem(new Date().toLocaleDateString('fr-FR') + " " + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), message);
+            // Détection automatique pour ajouter à l'agenda dynamique (ex: "note à l'agenda : ...", "rends-vous...", etc.)
+            const lowerMsg = message.toLowerCase();
+            if (lowerMsg.includes("agenda") || lowerMsg.includes("rendez-vous") || lowerMsg.includes("note") || lowerMsg.includes("prévois")) {
+                const now = new Date();
+                const dateStr = now.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
+                const timeStr = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+                addAgendaItem(`${dateStr} à ${timeStr}`, message);
             }
 
             fetch('/chat', {
@@ -359,15 +392,19 @@
             })
             .then(res => res.json())
             .then(data => {
-                appendMessage(data.response, 'zirco-message');
+                appendMessage(data.response, 'zirco-message', true);
                 speakText(data.response);
             });
         }
 
-        function appendMessage(text, className) {
+        function appendMessage(text, className, isHtml) {
             const msgDiv = document.createElement('div');
             msgDiv.className = `message ${className}`;
-            msgDiv.innerText = text;
+            if (isHtml) {
+                msgDiv.innerHTML = formatMarkdown(text);
+            } else {
+                msgDiv.innerText = text;
+            }
             chatContainer.appendChild(msgDiv);
             chatContainer.scrollTop = chatContainer.scrollHeight;
         }
